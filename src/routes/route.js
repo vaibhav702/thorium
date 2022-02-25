@@ -1,51 +1,52 @@
 const express = require('express');
-const {route} = require('./route')
-
 const router = express.Router();
-const logger =require('../logger/logger')
-const helper =require('../until/helper')
-const formatter =require('../validator/formatter')
-const lodash = require('lodash')
 
-router.get('/test-me', function(req, res) {
- res.send('my first ever Api')
-
+let players = []; // empty array
+router.post('/players', function (req, res) {
+    let player = req.body;
+    let playerName = player.name
+    for (let i = 0; i < players.length; i++)
+        if (players[i].name === playerName) {
+            res.send('player is present')
+        } //it will check if player is there or not if same name cames it will say player is present
+    players.push(player);
+    console.log('it is player from request', players)
+    res.send(players)
 });
-router.get('/test-me-1', function(req, res) {
- let name = ['Hariom','Akash','Akash','Arpit','sabhia']
- //module 1 member
- logger.printMessage('thorium')
- console.log(logger.url)
- logger.printWelcomeMessage()
- 
- });
-//  2
-helper.printCurrentDate()
-helper.printCurrentMonth()
-helper.printCurrentMonth()
+router.post('/players/:playerName/bookings/:bookingId', function (req, res) {
+    let name = req.params.playerName
+    // let bookingId = req.params.bookingId
+    let isplayerPresent = true
+    for (let i = 0; i < players.length; i++) {
+        if (players[i].name == name) {
+            isplayerPresent = true
+        }
 
-//3
-formatter.trim()
-formatter.changeToUpperCase()
-formatter.changetoLowerCase()
+    }
+    if (!isplayerPresent) {
+        return res.send('player is not there')
+    }
+    let booking = req.body
+    let bookingId = req.params.bookingId
+
+    for (let i = 0; i < players.length; i++) {
+        if (players[i].name == name) {
+
+            for (let j = 0; j < players[i].bookings.length; j++) {
+                if (players[i].bookings[j].bookingNumber == bookingId) {
+                    return res.send('booking is already there')
 
 
-// //lodash function
-// Using the package ‘lodash’ solve below problems(Write all this in route.js in /hello route handler)
-// - Create an array of strings containing the names all the months of a year and split the array into 4 equally sized sub-arrays using the chunk function. Print these sub-arrays
-// - Create an array containing the first 10 odd numbers. Using the tail function, return the last 9 elements of it and print them on console.
-// - Create 5 arrays of numbers containing a few duplicate values. Using the function union create a merged array with only unique values and print them
-let months = ['Jan','Feb','Mar','Apr','May','Jun','July','Aug','Sep','Oct','Nov','Dec']
-let subArray = lodash.chunk(months,3)
-console.log('chunks of months :- ',subArray)
+                }
 
-let oddNumbers = [1,3,5,6,9,78,55,52,42,256,2,745,33,67,23,12,11,54]
-let lastNumbers = lodash.tail(oddNumbers)
-console.log('last 10 odd number:-',lastNumbers)
+            }
 
-let arr1 = [1,2,3]
-let arr2 = [2,3,4,4]
-let arr3 = [4,5]
-let arr4 = [4,6,4]
-let arr5 = [5,8]
-console.log('merged array with unique value:- ',loadash.union(arr1,arr2,arr3,arr4,arr5))
+            players[i].bookings.push[booking]
+
+        }
+    }
+    res.send(players)
+})
+
+module.exports = router;
+// adding this comment for no reason
