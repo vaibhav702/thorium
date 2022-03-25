@@ -6,4 +6,8 @@ const userController =require("../Controller/userController");
 router.post("/register",userController.registerUser)
 router.post("/login",userController.loginUser)  //to create User
 
+
+
+
+router.post("/books",bookController.createBook)
 module.exports = router;
