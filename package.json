@@ -1,0 +1,22 @@
+{
+  "name": "project---books-management",
+  "version": "1.0.0",
+  "description": "book management project that will help the author to create and publish book",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "Nodemon run start"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "body-parser": "^1.19.2",
+    "express": "^4.17.3",
+    "json": "^11.0.0",
+    "jsonwebtoken": "^8.5.1",
+    "mongoose": "^6.2.8",
+    "nodemon": "^2.0.15",
+    "token": "^0.1.0",
+    "web": "^0.0.2"
+  }
+}
