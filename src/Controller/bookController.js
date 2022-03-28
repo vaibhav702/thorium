@@ -70,7 +70,6 @@ const createBook = async function (req, res) {
     return res.status(500).send({ status: false, Error: error.message });
   }
 };
-module.exports.createBook = createBook;
 
 //-----------------------------------------------------------------------------------------//
 // to get books
@@ -130,7 +129,7 @@ const getBook = async function (req, res) {
     return res.status(500).send({ status: false, Error: error.message });
   }
 };
-module.exports.getBook = getBook;
+
 //----------------------------------------------------------------------------------//
 //to get book by id by using filter
 const getBookById = async (req, res) => {
@@ -178,103 +177,102 @@ const getBookById = async (req, res) => {
   }
 };
 
-module.exports.getBookById = getBookById;
 
-//---------------------------------------------------------------------------------//
-// //to update booktitle
-//   - excerpt
-//   - release date
 
-    const updateBook = async function (req, res) {
-      try {
-        if (!validator.isValid(req.params)) {
-          return res
-            .status(400)
-            .send({ status: false, message: "there no Data Input in request" });
-        }
 
-        if (!Object.keys(req.body).length) {
-          return res.status(400).send({
-            status: false,
-            message: "Bad Request there is no data in input field",
-          });
-        }
+const updateBook = async function (req, res) {
+  try {
 
-        let bookId = req.params.bookId;
-        if (!bookId) bookId = req.query.bookId;
-        if (!bookId) bookId = req.body.bookId;
+    if (!validator.isValid(req.params)) {
+      return res
+        .status(400)
+        .send({ status: false, message: "there no Data Input in request" });
+    }
 
-        if (!bookId) {
-          return res.status(400).send({
-            status: false,
-            msg: "bookId is must please provide bookId ",
-          });
-        }
+    if(!Object.keys(req.body).length){
+      return res.status(400).send({
+        status:false, 
+        message:"Bad Request there is no data in input field"})
+    }
 
-        if (!validator.isValidObjectId(bookId)) {
-          return res
-            .status(400)
-            .send({ status: false, message: "Invalid ObjectId" });
-        }
+    let bookId = req.params.bookId;
+    if(!bookId)bookId=req.query.bookId
+    if(!bookId)bookId= req.body.bookId
 
-        const { title, ISBN } = req.body;
+    if(!bookId){
+      return res.status(400).send({
+        status:false,
+        msg:"bookId is must please provide bookId "})
+    }
 
-        if (title) {
-          let titleExists = await bookModel.findOne({
-            title: title,
-            isDeleted: false,
-          });
+    if (!validator.isValidObjectId(bookId)) {
+      return res
+        .status(400)
+        .send({ status: false, message: "Invalid ObjectId" });
+    }
+    
+    
+    
+    const { title , ISBN } = req.body;
 
-          if (titleExists) {
-            return res.status(409).send({
-              status: false,
-              message: `this title: ${title} is already Exists please enter anotherone`,
-            });
-          }
-        }
+    if(title){
+      
+      let titleExists = await bookModel.findOne({title:title, isDeleted:false})
 
-        if (ISBN) {
-          let isbnExists = await bookModel.findOne({
-            ISBN: ISBN,
-            isDeleted: false,
-          });
-
-          if (isbnExists) {
-            return res.status(409).send({
-              status: false,
-              message: `this ${ISBN} Number is already Exists please enter anotherone`,
-            });
-          }
-        }
-
-        let updateData = req.body;
-        await bookModel.findOneAndUpdate(
-          { _id: bookId, isDeleted: false },
-          { updateData },
-          { new: true }
-        );
-
-        let newUpdate = await bookModel.find({ _id: bookId });
-
-        if (!newUpdate.length) {
-          return res.status(200).send({
-            status: false,
-            message: "updation failed : sorry match not found ",
-          });
-        }
-
-        return res.status(200).send({
-          status: true,
-          message: "updated successfully",
-          data: newUpdate,
-        });
-      } catch (error) {
-        return res.status(500).send({ status: false, Error: error.message });
+      if(titleExists){
+        return res.status(409).send({
+          status:false, 
+          message:`this title: ${title} is already Exists please enter anotherone`});
       }
-    };
+      
+    }
 
-    module.exports.updateBook = updateBook;
- 
+
+    if(ISBN){
+      
+      let isbnExists = await bookModel.findOne({ISBN:ISBN, isDeleted:false})
+
+      if(isbnExists){
+        return res.status(409).send({
+          status:false,
+          message:`this ${ISBN} Number is already Exists please enter anotherone`});
+      }
+    }
+
+  
+    
+    let updateData = req.body
+     const dataupdate = await bookModel.updateOne(
+      { _id: bookId, isDeleted: false },
+      updateData ,
+      { new: true }
+    );
+      console.log(dataupdate)
+    let newUpdate = await bookModel.find({_id: bookId})
+
+    if (!newUpdate.length) {
+      return res.status(200).send({
+        status: false,
+        message: "updation failed : sorry match not found "
+      });
+    }
+
+    return res.status(200).send({
+      status: true,
+      message: "updated successfully",
+      data: newUpdate
+    });
+
+
+  } catch (error) {
+    return res.status(500).send({ status: false, Error: error.message });
+  }
+};
+
+
+
+
+
 
 //------------------------------------------------------------------------------------//
 //to delete book by its id
@@ -312,4 +310,12 @@ const deleteById = async function (req, res) {
     return res.status(500).send({ status: false, Error: error.message });
   }
 };
+
+
+
+module.exports.createBook = createBook;
 module.exports.deleteById = deleteById;
+module.exports.updateBook = updateBook;
+module.exports.getBookById = getBookById;
+module.exports.getBook = getBook;
+
