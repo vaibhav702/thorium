@@ -77,20 +77,19 @@ module.exports.createBook = createBook;
 const getBook = async function (req, res) {
   try {
     const data = req.query;
-    
+
     // const fgfg=Object.keys(data)
     // console.log(fgfg)
-    
+
     if (!Object.keys(data).length) {
       let books = await bookModel.find({ isDeleted: false }); //.sort({title:-1});
-     
-    
-      if(!(books.length)){
-        return res.status(404).send({status:false,msg:"data not found"})
+
+      if (!books.length) {
+        return res.status(404).send({ status: false, msg: "data not found" });
       }
       books.sort(function (a, b) {
         return a.title.localeCompare(b.title);
-      });//use for ascending order sort
+      }); //use for ascending order sort
       return res
         .status(200)
         .send({ status: true, message: "get all books", data: books });
@@ -111,12 +110,14 @@ const getBook = async function (req, res) {
               { subcategory: subcategory },
             ],
           },
-        ], 
+        ],
       }); //.sort({title:-1});
       console.log(subcategory);
-     
-      if(!(filter.length)){
-        return res.status(404).send({status:false,msg:"related data not found "})
+
+      if (!filter.length) {
+        return res
+          .status(404)
+          .send({ status: false, msg: "related data not found " });
       }
       filter.sort(function (a, b) {
         return a.title.localeCompare(b.title);
@@ -183,52 +184,97 @@ module.exports.getBookById = getBookById;
 // //to update booktitle
 //   - excerpt
 //   - release date
-//   - ISBN
-const updateBook = async function (req, res) {
-  try {
 
-    let bookId = req.params.bookId;
-    if(!bookId)bookId=req.query.bookId
-    if(!bookId)bookId= req.body.bookId
-    if(!bookId){
-      return res.status(400).send({status:false,msg:"bookId is must please provide bookId "})
-    }
+    const updateBook = async function (req, res) {
+      try {
+        if (!validator.isValid(req.params)) {
+          return res
+            .status(400)
+            .send({ status: false, message: "there no Data Input in request" });
+        }
 
-    console.log(bookId);
-    let updated = req.body;
-    const { booktitle, excerpt, releaseAt, ISBN } = updated;
-    updated.excerpt = excerpt;
-    updated.releaseAt = releaseAt;
-    updated.ISBN = ISBN;
-    updated.booktitle = booktitle;
-    if (validator.isValid(req.params)) {
-      return res
-        .status(400)
-        .send({ status: false, message: "there no Data Input in request" });
-    }
-    if (validator.isValidObjectId(bookId)) {
-      return res
-        .status(400)
-        .send({ status: false, message: "Invalid ObjectId" });
-    }
+        if (!Object.keys(req.body).length) {
+          return res.status(400).send({
+            status: false,
+            message: "Bad Request there is no data in input field",
+          });
+        }
 
-    const bookData = await bookModel.findOneAndUpdate(
-      { _id: bookId, isDeleted: false },
-      { updated },
-      { new: true }
-    );
-    if (bookData) {
-      return res.status(200).send({
-        status: true,
-        message: "updated successfully",
-        data: bookData,
-      });
-    }
-  } catch (error) {
-    return res.status(500).send({ status: false, Error: error.message });
-  }
-};
-module.exports.updateBook = updateBook;
+        let bookId = req.params.bookId;
+        if (!bookId) bookId = req.query.bookId;
+        if (!bookId) bookId = req.body.bookId;
+
+        if (!bookId) {
+          return res.status(400).send({
+            status: false,
+            msg: "bookId is must please provide bookId ",
+          });
+        }
+
+        if (!validator.isValidObjectId(bookId)) {
+          return res
+            .status(400)
+            .send({ status: false, message: "Invalid ObjectId" });
+        }
+
+        const { title, ISBN } = req.body;
+
+        if (title) {
+          let titleExists = await bookModel.findOne({
+            title: title,
+            isDeleted: false,
+          });
+
+          if (titleExists) {
+            return res.status(409).send({
+              status: false,
+              message: `this title: ${title} is already Exists please enter anotherone`,
+            });
+          }
+        }
+
+        if (ISBN) {
+          let isbnExists = await bookModel.findOne({
+            ISBN: ISBN,
+            isDeleted: false,
+          });
+
+          if (isbnExists) {
+            return res.status(409).send({
+              status: false,
+              message: `this ${ISBN} Number is already Exists please enter anotherone`,
+            });
+          }
+        }
+
+        let updateData = req.body;
+        await bookModel.findOneAndUpdate(
+          { _id: bookId, isDeleted: false },
+          { updateData },
+          { new: true }
+        );
+
+        let newUpdate = await bookModel.find({ _id: bookId });
+
+        if (!newUpdate.length) {
+          return res.status(200).send({
+            status: false,
+            message: "updation failed : sorry match not found ",
+          });
+        }
+
+        return res.status(200).send({
+          status: true,
+          message: "updated successfully",
+          data: newUpdate,
+        });
+      } catch (error) {
+        return res.status(500).send({ status: false, Error: error.message });
+      }
+    };
+
+    module.exports.updateBook = updateBook;
+ 
 
 //------------------------------------------------------------------------------------//
 //to delete book by its id
