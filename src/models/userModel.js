@@ -20,4 +20,5 @@ const userSchema = new mongoose.Schema(
   },
   { timestamps: true }
 );
+
 module.exports = mongoose.model("project3_registerUser", userSchema);
