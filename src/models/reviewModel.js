@@ -9,7 +9,8 @@ const reviewSchema = new mongoose.Schema({
         reviewedAt: {type:Date,required:true},
         rating: {type:Number,required:true, enum: [1,2,3,4,5]},
         review: {type:String},
-        isDeleted: {type:Boolean, default: false}
+        isDeleted: {type:Boolean, default: false},
+        deletedAt: {type:Date}
       
 
 }, { timestamps: true })
