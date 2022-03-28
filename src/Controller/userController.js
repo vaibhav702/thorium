@@ -5,9 +5,11 @@ const jwt = require("jsonwebtoken");
 const registerUser = async function (req, res) {
   try {
     const requestBody = req.body;
+
     if(!validator.isValidRequestBody(requestBody)){
         return res.status(400).send({status:false,message:"not a valid request body"})
     }else{
+
         const{title,name,phone,email,password,address,confirmPassword}=requestBody;
         if(!validator.isValid(name)){
             return res.status(400).send({status:false,message:"enter valid name"})
@@ -21,9 +23,11 @@ const registerUser = async function (req, res) {
         if(!validator.isValid(title)){
             return res.status(400).send({status:false,message:"enter valid title"})
         }
+
         if(!validator.isValid(phone)){
             return res.status(400).send({status:false,message:"enter valid phone"})
         }
+
         if (!/^[1-9]\d{9}$/.test(phone)) {
             return res
               .status(422)
@@ -34,6 +38,7 @@ const registerUser = async function (req, res) {
             phone,
             isDeleted: false,
           });
+
           if (isPhoneAlreadyUsed) {
             return res.status(409).send({
               status: false,
@@ -56,6 +61,7 @@ const registerUser = async function (req, res) {
             email,
             isDeleted: false,
           });
+
           if (isEmailAlreadyUsed) {
             return res.status(409).send({
               status: false,
@@ -69,6 +75,7 @@ const registerUser = async function (req, res) {
         if(!validator.isValid(confirmPassword)){
             return res.status(400).send({status:false,message:"enter valid confirmpassword"})
         }
+
         if(password!==confirmPassword){
             return res.status(422).send({status:false,message:"password does not match with confirm password"})
 
@@ -79,6 +86,7 @@ const registerUser = async function (req, res) {
             return res.status(400).send({status:false,message:"enter valid address"})
         }
         const {street,pincode,city}=address;
+
         if(!validator.isValid(street)){
             return res.status(400).send({status:false,message:"enter valid street address"})
         }
@@ -109,7 +117,9 @@ const registerUser = async function (req, res) {
     return res.status(500).send({ status: false, Error: error.message });
   }
 };
+
 module.exports.registerUser = registerUser;
+
 const loginUser = async function (req, res) {
   try {
     let email = req.body.email;
@@ -149,7 +159,8 @@ const loginUser = async function (req, res) {
     );
 
     res.setHeader("x-auth-token", token);
-    res.send({ status: true, data: token });
+    res.status(200).send({ status: true, data: token });
+    
   } catch (error) {
     return res.status(500).send({ status: false, Error: error.message });
   }
