@@ -1,6 +1,6 @@
 const mongoose = require('mongoose')
 const ObjectId = mongoose.Schema.Types.ObjectId;
-const cd=new Date()
+
 
 const bookSchema = new mongoose.Schema({
 
@@ -12,11 +12,12 @@ const bookSchema = new mongoose.Schema({
   category: {type:String, required:true},
   subcategory:[ {type:String, required:true}], 
   reviews: {type:Number, default: 0},
-  deletedAt: {type:String ,default:false}, 
+  deletedAt: {type:String }, 
   isDeleted: {type:Boolean, default: false},
-  releasedAt: {type:Date, default:`${cd.getFullYear()}/${cd.getMonth()}/${cd.getDate()}`},
+  releasedAt: {type:Date, required:true},
  
 
 }, { timestamps: true })
+
 module.exports = mongoose.model("project3_Book", bookSchema);
 

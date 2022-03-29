@@ -23,6 +23,9 @@ const registerUser = async function (req, res) {
         if(!validator.isValid(title)){
             return res.status(400).send({status:false,message:"enter valid title"})
         }
+        if(!(["Mr", "Mrs", "Miss"].includes(title))){
+          return res.status(400).send({status:false,message:"enter valid title between Mr, Mrs, Miss"})
+        }
 
         if(!validator.isValid(phone)){
             return res.status(400).send({status:false,message:"enter valid phone"})
@@ -154,7 +157,7 @@ const loginUser = async function (req, res) {
       },
       "PROJECT3BOOKMANAGEMENTPROJECTDONYBYGROUP7",
       {
-        expiresIn: "1m",
+        expiresIn: "99m",
       }
     );
 

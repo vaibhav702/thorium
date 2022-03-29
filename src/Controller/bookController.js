@@ -1,37 +1,80 @@
 const bookModel = require("../models/bookModel");
 const validator = require("../validator/validator");
-const jwt = require("jsonwebtoken");
-const userModel = require("../models/userModel");
+const reviewModel = require('../models/reviewModel')
+const moment = require('moment')
+// const jwt = require("jsonwebtoken");
+// const userModel = require("../models/userModel");
 
 //-------------------------------------------------------------------------------------//
+//when book isDeleted we delete all reviews is deleted
+//Date proper validation
+//ISBN
+//title is unique or not RRR || Rrr || rrr || 
+//userModel handal mr.MR.mss
+//realeseAt Date date will be decreased by one day in responce
+//check reviews are deleted
 //Create Book
+// there is need excerpt = unique if yes then change into model, check if it is present or not at creation and updation time
+//check subarray is working or not
+//bookID validations in middleware
+
 const createBook = async function (req, res) {
   try {
     let data = req.body;
-    const { title, excerpt, userId, ISBN, category, subcategory, reviews } =
-      data;
+
+    if(!(Object.keys(data).length)){
+      return res.status(400).send({status:false, message:"Bad request input field is empty"})
+    }
+
+    const { title, excerpt, userId, ISBN, category, subcategory, reviews } = data;
+    let {releasedAt} = data
     //validation Starts
     
 
 
-    if (!validator.isValid(title)) {
+    if (!validator.isValid(title.trim())) {
       return res
         .status(400)
         .send({ status: false, message: "not a valid title" });
     }
+
+    
     let isTitle = /^[A-Z]{1}[A-Za-z0-9-_ ]*$/;
-    if (!isTitle.test(title)) {
+
+    if (!isTitle.test(title.trim())) {
       return res.status(422).send({
         status: false,
         message: "please enter the first letter in upper case  ",
       });
     }
 
+
+   // db.collection.find({'name': {'$regex': thename,$options:'i'}});
+   const isTitleExists = await bookModel.find({'title': {'$regex': title, '$options': 'i'}})
+   console.log(isTitleExists)
+    const exactTitleMatch = []
+   for(let i=0; i<isTitleExists.length; i++){
+
+    const str1 = isTitleExists[i].title
+    const str2 = title
+    if(str1.toLowerCase() === str2.toLowerCase() ){
+      exactTitleMatch.push(str1)
+    }
+   }
+
+   console.log(exactTitleMatch)
+   if(exactTitleMatch.length){
+     return res.status(409).send({status:false, message:`Bad Request this title: "${title}" is already exists with "${exactTitleMatch[0]}" this name`})
+   }
+
+
+
     if (!validator.isValid(excerpt)) {
       return res
         .status(400)
         .send({ status: false, message: "not a valid excerpt" });
     }
+
     if (!validator.isValidObjectId(userId)) {
       return res
         .status(400)
@@ -41,36 +84,74 @@ const createBook = async function (req, res) {
     if (!validator.isValid(ISBN)) {
       return res
         .status(400)
-        .send({ status: false, message: "not a valid ISBN" });
+        .send({ status: false, message: "Bad request ISBN is not present" });
     }
-    if (!validator.isValid(subcategory)) {
+
+
+    // 12 3456 3456 54
+    // 12-3456-3456-54
+     if(!/^[0-9]{1}[0-9]{12}$/.test(ISBN)){
+       return res.status(400).send({status:false, message:`this ${ISBN} ISBN is not valid please enter 13 digit number`})
+     }
+
+    if(ISBN){
+      
+      let isbnExists = await bookModel.findOne({ISBN:ISBN, isDeleted:false})
+
+      if(isbnExists){
+        return res.status(409).send({
+          status:false,
+          message:`this ${ISBN} ISBN Number is already Exists please enter anotherone`});
+      }
+    }
+
+
+    if (!(validator.isValid(subcategory) && subcategory.length)) {
       return res
         .status(400)
         .send({ status: false, message: "not a valid subcategory" });
     }
-    if (!validator.isValid(reviews)) {
-      return res
-        .status(400)
-        .send({ status: false, message: "not a valid reviews" });
-    }
+
+
+    // if (!validator.isValid(reviews)) {
+    //   return res
+    //     .status(400)
+    //     .send({ status: false, message: "not a valid reviews" });
+    // }
+
+
+
+
     if (!validator.isValid(category)) {
       return res
         .status(400)
         .send({ status: false, message: "not a valid category" });
     }
+
+    if(!validator.isValid(releasedAt)){
+      return res.status(400).send({status:false, message:"releasedAt is not present"})
+    }
     //to get date at release at
-    const cd = new Date();
-    const releasedAt = `${cd.getFullYear()}/${cd.getMonth()}/${cd.getDate()}`;
-    console.log(releasedAt);
-    data.releasedAt = releasedAt;
-    let savedData = await bookModel.create(data);
+    let m = moment(releasedAt, 'YYYY-MM-DD');
+    //m.isValid(); // false
+    if(!m.isValid()){
+      return res.status(400).send({status:false, message:`${releasedAt} is not valid date follow format: 'YYYY-MM-DD' `})
+    }
+    //problem = date = 2011/12/22 convet 2011/12/21
+    //solution
+     const B  = moment(releasedAt, 'YYYY-MM-DD').add(1, 'days');
+     console.log(B)
+
+
+
+    const savedData = await bookModel.create(data);
     return res.status(201).send({
       status: false,
       messsage: "books created successfully",
       data: savedData,
     });
   } catch (error) {
-    return res.status(500).send({ status: false, Error: error.message });
+    return res.status(500).send({ status: true, Error: error.message });
   }
 };
 
@@ -89,12 +170,15 @@ const getBook = async function (req, res) {
       if (!books.length) {
         return res.status(404).send({ status: false, msg: "data not found" });
       }
+
       books.sort(function (a, b) {
         return a.title.localeCompare(b.title);
       }); //use for ascending order sort
+      
       return res
         .status(200)
         .send({ status: true, message: "get all books", data: books });
+
     } else {
       const { userId, category, subcategory } = data;
       if (!userId && !category && !subcategory) {
@@ -121,6 +205,7 @@ const getBook = async function (req, res) {
           .status(404)
           .send({ status: false, msg: "related data not found " });
       }
+
       filter.sort(function (a, b) {
         return a.title.localeCompare(b.title);
       });
@@ -135,16 +220,18 @@ const getBook = async function (req, res) {
 
 //----------------------------------------------------------------------------------//
 //to get book by id by using filter
+
+
 const getBookById = async (req, res) => {
   try {
     const bookId = req.params.bookId;
-    if (validator.isValid(req.params)) {
+    if (!validator.isValid(req.params)) {
       return res
         .status(400)
         .send({ status: false, message: "there no Data Input in request" });
     }
 
-    if (validator.isValidObjectId(bookId)) {
+    if (!validator.isValidObjectId(bookId)) {
       return res
         .status(400)
         .send({ status: false, message: "Invalid ObjectId" });
@@ -152,13 +239,14 @@ const getBookById = async (req, res) => {
 
     const bookData = await bookModel.findOne({ _id: bookId, isDeleted: false });
 
-    if (validator.isValid(bookData)) {
+    if (!validator.isValid(bookData)) {
       return res.status(404).send({
         status: false,
         message: `Book is not found with this ID: ${bookId}`,
       });
     }
     //to get book in review folder
+
     const reviews = await reviewModel
       .find({ bookId: bookId, isDeleted: false })
       .select({
@@ -169,16 +257,26 @@ const getBookById = async (req, res) => {
         rating: 1,
         review: 1,
       });
-
-    bookData.reviewsData = reviews;
+//       console.log(reviews)
+//  console.log(bookData)
+//     bookData.reviewsData = reviews;
+    const bookReviews = {
+      bookData,
+      reviewsData:reviews
+    }
 
     return res
       .status(200)
-      .send({ status: true, message: "Books list", data: bookData });
+      .send({ status: true, message: "Books list", data: bookReviews });
   } catch (error) {
     return res.status(500).send({ status: false, Error: error.message });
   }
 };
+
+
+
+
+
 
 
 
@@ -199,8 +297,8 @@ const updateBook = async function (req, res) {
     }
 
     let bookId = req.params.bookId;
-    if(!bookId)bookId=req.query.bookId
-    if(!bookId)bookId= req.body.bookId
+    if(!bookId)bookId = req.query.bookId
+    if(!bookId)bookId = req.body.bookId
 
     if(!bookId){
       return res.status(400).send({
@@ -216,20 +314,35 @@ const updateBook = async function (req, res) {
     
     
     
-    const { title , ISBN } = req.body;
+    const { title , ISBN ,releasedAt} = req.body;
 
     if(title){
       
-      let titleExists = await bookModel.findOne({title:title, isDeleted:false})
 
-      if(titleExists){
-        return res.status(409).send({
-          status:false, 
-          message:`this title: ${title} is already Exists please enter anotherone`});
-      }
+      const isTitleExists = await bookModel.find({'title': {'$regex': title, '$options': 'i'} , 'isDeleted': false })
+   console.log(isTitleExists)
+    const exactTitleMatch = []
+   for(let i=0; i<isTitleExists.length; i++){
+
+    const str1 = isTitleExists[i].title
+    const str2 = title
+    if(str1.toLowerCase() === str2.toLowerCase() ){
+      exactTitleMatch.push(str1)
+    }
+   }
+
+   console.log(exactTitleMatch)
+   if(exactTitleMatch.length){
+     return res.status(409).send({status:false, message:`Bad Request this title: "${title}" is already exists with "${exactTitleMatch[0]}" this name`})
+   }
+
       
     }
 
+
+    if(!/^[0-9]{1}[0-9]{12}$/.test(ISBN)){
+      return res.status(400).send({status:false, message:`this ${ISBN} ISBN is not valid please enter 13 digit number`})
+    }
 
     if(ISBN){
       
@@ -242,6 +355,18 @@ const updateBook = async function (req, res) {
       }
     }
 
+    if(releasedAt){
+    if(!validator.isValid(releasedAt)){
+      return res.status(400).send({status:false, message:"releasedAt is not present"})
+    }
+    //to get date at release at
+    let m = moment(releasedAt, 'YYYY-MM-DD');
+    //m.isValid(); // false
+    if(!m.isValid()){
+      return res.status(400).send({status:false, message:`${releasedAt} is not valid date follow format: 'YYYY-MM-DD' `})
+    }
+  }
+
   
     
     let updateData = req.body
@@ -251,7 +376,7 @@ const updateBook = async function (req, res) {
       { new: true }
     );
       console.log(dataupdate)
-    let newUpdate = await bookModel.find({_id: bookId})
+    let newUpdate = await bookModel.find({_id: bookId,isDeleted:false})
 
     if (!newUpdate.length) {
       return res.status(200).send({
@@ -287,7 +412,7 @@ const deleteById = async function (req, res) {
     ) {
       return res
         .status(400)
-        .send({ status: false, message: "bookid is not valid" });
+        .send({ status: false, message: "bookid is not valid or not present" });
     }
 
     let filter = {
@@ -301,14 +426,20 @@ const deleteById = async function (req, res) {
       { isDeleted: true, deletedAt: new Date() },
       { new: true }
     );
+
     if (!validator.isValid(deletedBook)) {
       return res.status(404).send({ status: false, message: "book not found" });
     }
+
+     await reviewModel.findAndUpdate({bookId:bookId},{isDeleted:true},{new:true})
+
+
     if (deletedBook) {
       return res
         .status(200)
         .send({ status: true, msg: "book is successfully deleted" });
     }
+
   } catch (error) {
     return res.status(500).send({ status: false, Error: error.message });
   }
@@ -321,4 +452,3 @@ module.exports.deleteById = deleteById;
 module.exports.updateBook = updateBook;
 module.exports.getBookById = getBookById;
 module.exports.getBook = getBook;
-
