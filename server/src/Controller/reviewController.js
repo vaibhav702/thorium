@@ -1,4 +1,4 @@
-const userModel = require("../models/userModel");
+
 const bookModel = require("../models/bookModel");
 const reviewModel = require("../models/reviewModel");
 const validator = require("../validator/validator");
@@ -148,12 +148,12 @@ const updateReviews = async (req, res) => {
     }
 
     if (reviewId) {
-      let reviewExists = await reviewId.findOne({
+      let reviewExists = await reviewModel .findOne({
         reviewId: reviewId,
         isDeleted: false,
       });
 
-      if (reviewExists) {
+      if (!reviewExists) {
         return res.status(404).send({
           status: false,
           message: `review with this reviewId : ${reviewId} is not found please enter valid reviewId`,
@@ -161,7 +161,7 @@ const updateReviews = async (req, res) => {
       }
     }
 
-    req.body.reviewedAt = new Date().toLocaleString();
+    req.body.reviewedAt = new Date()//.toLocaleString();
 
     const newUpdattion = req.body;
 
@@ -185,6 +185,11 @@ const updateReviews = async (req, res) => {
         rating: 1,
         review: 1,
       });
+      const newObject ={
+        bookReviews,
+       reviewData: booksTotalReviews
+      }
+      return res.status(200).send({status:true, message:"Done", Data:newObject})
   } catch (error) {
     return res.status(500).send({ status: false, Error: error.message });
   }

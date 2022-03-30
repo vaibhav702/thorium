@@ -393,7 +393,7 @@ const updateBook = async function (req, res) {
     let newUpdate = await bookModel.find({ _id: bookId, isDeleted: false });
 
     if (!newUpdate.length) {
-      return res.status(200).send({
+      return res.status(400).send({
         status: false,
         message: "updation failed : sorry match not found ",
       });
