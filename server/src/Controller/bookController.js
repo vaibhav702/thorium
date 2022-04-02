@@ -105,6 +105,7 @@ const createBook = async function (req, res) {
         message: "subcategory is not present in input field please provide",
       });
     }
+    
     console.log(subcategory, subcategory.length, typeof subcategory);
     if (!subcategory.length ||  !Array.isArray(subcategory)) {
       return res
@@ -162,7 +163,7 @@ const createBook = async function (req, res) {
 
     const savedData = await bookModel.create(data);
     return res.status(201).send({
-      status: false,
+      status: true,
       messsage: "books created successfully",
       data: savedData,
     });

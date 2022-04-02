@@ -218,7 +218,7 @@ const deletedReview = async function (req, res) {
 
     if (isReviewIdPresent == null) {
       return res.status(404).send({
-        status: true,
+        status: false,
         msg: "No review is present",
       });
     }
