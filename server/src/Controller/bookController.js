@@ -3,26 +3,65 @@ const bookModel = require("../models/bookModel");
 const validator = require("../validator/validator");
 const reviewModel = require("../models/reviewModel");
 const moment = require("moment");
+const aws = require("aws-sdk");
+
+aws.config.update({
+  accessKeyId: "AKIAY3L35MCRVFM24Q7U",
+  secretAccessKey: "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",
+  region: "ap-south-1",
+});
+
+let uploadFile = async (file) => {
+  return new Promise(function (resolve, reject) {
+    //this function will upload file to aws and return the link
+    let s3 = new aws.S3({ apiVersion: "2006-03-01" }); //we will be using s3 service of aws
+    // uploadFile(files[0])
+    var uploadParams = {
+      ACL: "public-read",
+      Bucket: "classroom-training-bucket", // HERE
+      Key: "group/" + file.originalname, // HERE "radhika/smiley.jpg"
+      Body: file.buffer,
+    };
+
+    s3.upload(uploadParams, function (err, data) {
+      if (err) {
+        return reject({ error: err });
+      }
+
+      console.log(data);
+      console.log(" file uploaded succesfully ");
+      return resolve(data.Location); // HERE
+    });
+  });
+};
 
 //-------------------------------------Create Book------------------------------------------------//
 
+
 const createBook = async function (req, res) {
   try {
-    let data = req.body;
+    // console.log(req)
+    // console.log("next body ************************************")
+
+    const data = JSON.parse(req.body.data);
+    // console.log(typeof data)
+    // console.log(data.title)
+    // console.log(data.subcategory)
+
+    // console.log(req.body)
 
     if (!Object.keys(data).length) {
       return res
         .status(400)
         .send({ status: false, message: "Bad request input field is empty" });
     }
-    //------------------------Object Destruturing-------------------------------------------------//
-    const { title, excerpt, userId, ISBN, category, subcategory, reviews } =
-      data;
-    let { releasedAt } = data;
 
-    //-----------------------------Validation Starts------------------------------------------------------//
+    const { title, excerpt, userId, ISBN, category, reviews } = data;
 
-    if (!validator.isValid(title.trim())) {
+    let { releasedAt, subcategory } = data;
+    //validation Starts
+
+    if (!validator.isValid(title)) {
       return res
         .status(400)
         .send({ status: false, message: "title input field is empty" });
@@ -38,10 +77,9 @@ const createBook = async function (req, res) {
     }
 
     const isTitleExists = await bookModel.find({
+      isDeleted: false,
       title: { $regex: title, $options: "i" },
     });
-
-    console.log(isTitleExists);
 
     const exactTitleMatch = [];
     for (let i = 0; i < isTitleExists.length; i++) {
@@ -52,7 +90,6 @@ const createBook = async function (req, res) {
       }
     }
 
-    console.log(exactTitleMatch);
     if (exactTitleMatch.length) {
       return res.status(409).send({
         status: false,
@@ -100,24 +137,25 @@ const createBook = async function (req, res) {
     }
 
     if (!validator.isValid(subcategory)) {
-      return res.status(400).send({
-        status: false,
-        message: "subcategory is not present in input field please provide",
-      });
+      return res
+        .status(400)
+        .send({
+          status: false,
+          message: "subcategory is not present in input field please provide",
+        });
     }
-    
-    console.log(subcategory, subcategory.length, typeof subcategory);
-    if (!subcategory.length ||  !Array.isArray(subcategory)) {
+
+    if (!Array.isArray(subcategory)) {
       return res
         .status(400)
         .send({
           status: false,
           message:
-            "Either subcategory is empty or you are sending in wrong format it only accept array of string",
+            "either subcategory is empty or your sending in wrong format it accept only array of string",
         });
     }
 
-    req.body.subcategory = subcategory.filter((x) => x.trim());
+    data.subcategory = subcategory.filter((x) => x.trim());
     if (data.subcategory.length == 0) {
       return res
         .status(400)
@@ -141,25 +179,35 @@ const createBook = async function (req, res) {
     };
 
     if (!isRightFormatReleasedAt(releasedAt)) {
-      return res.status(400).send({
-        status: false,
-        message: "Please provide a valid released date in format YYYY/MM/DD ",
-      });
+      return res
+        .status(400)
+        .send({
+          status: false,
+          message: "Please provide a valid released date in format YYYY/MM/DD ",
+        });
     }
-    //-----------------------------Validation Ends------------------------------------------------------//
 
     let m = moment(releasedAt, "YYYY-MM-DD");
-    //m.isValid(); // false
+
     if (!m.isValid()) {
       return res.status(400).send({
         status: false,
         message: `${releasedAt} is not valid date follow format: 'YYYY-MM-DD' `,
       });
     }
-    //problem = date = 2011/12/22 convet 2011/12/21
-    //solution
-    const B = moment(releasedAt, "YYYY-MM-DD").add(1, "days");
-    console.log(B);
+
+    let uploadedFileURL;
+
+    let files = req.files; // file is the array
+    if (files && files.length > 0) {
+      uploadedFileURL = await uploadFile(files[0]);
+    } else {
+      return res.status(400).send({ msg: "No file found in request" });
+    }
+    data.bookCover = uploadedFileURL;
+
+    // const B = moment(releasedAt, "YYYY-MM-DD").add(1, "days");
+    // console.log(B);
 
     const savedData = await bookModel.create(data);
     return res.status(201).send({

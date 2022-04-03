@@ -15,14 +15,13 @@ router.get("/books", middleware.authentication,bookController.getBook);
 router.get("/books/:bookId",middleware.authentication,bookController.getBookById);
 router.put("/books/:bookId",middleware.authorization,bookController.updateBook);
 router.delete("/books/:bookId",middleware.authorization,bookController.deleteById);
+// router.post("/books/uploadCover",bookController.uploadCover)
 
 //----------------------review controler-----------------------------------------------//
 router.post("/books/:bookId/review", reviewController.addReview);
 router.put("/books/:bookId/review/:reviewId", reviewController.updateReviews);
 router.delete("/books/:bookId/review/:reviewId",reviewController.deletedReview);
 
-router.get("*", function (req, res) {
-  res.status(404).send({ status: false, ERROR: "page not found" });
-});
+
 //-------------------------Exporting Router-----------------------------------------------------------------//
 module.exports = router;
